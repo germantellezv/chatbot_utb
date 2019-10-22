@@ -1,3 +1,3 @@
 # CHATBOT 
 
-Este chatbot permite a la comunidad de la Universidad Tecnológica de Bolívar consultar información sobre eventos, calificaciones y horarios mediante el **Asistente de Google** y **Telegram**.
+Este chatbot permite a la comunidad de la Universidad Tecnológica de Bolívar consultar información sobre eventos, calificaciones y horarios mediante el **Asistente de Google**, **Telegram** y **Whatsapp**.
