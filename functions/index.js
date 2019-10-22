@@ -14,6 +14,7 @@ let db = admin.firestore();
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+
     // --- INICIO --- //
     const emoji = require('node-emoji');
     const saludos = [`Hola! Soy Aurora. ¿Cómo te puedo ayudar?`,
@@ -26,8 +27,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     const msgListHorarios = [`Te puedo mostrar los horarios de semilleros, monitorías
  	y los horarios de atención de los profesores. ¿Con cuál te gustaría comenzar?`,
         `Tengo horario de semilleros, monitorías y el de profesores, ¿Cual te interesa conocer?`];
-
-
     // --- FIN --- //
 
     const agent = new WebhookClient({ request, response });
@@ -47,6 +46,44 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             agent.add(new Suggestion('Información'));
             agent.add(new Suggestion('Eventos'));
         } */
+
+    // Intent Contactos
+    function mostrarContacto() {
+        const cheerio = require('cheerio');
+        const rp = require('request-promise');
+        const options = {
+            uri: 'https://www.utb.edu.co',
+            transform: function (body) {
+                return cheerio.load(body);
+            }
+        }
+        return rp(options)
+            .then($ => {
+                var sedes = []
+                var addresses = []
+                var orderedInfo = []
+                $('.col-xs-12.text-left.col-sm-6.col-md-6.col-lg-3.mb-sm-3.mb-3.text-bold').find('div.text-verde.h5').each(function (i, elem) {
+                    var tituloSede = $(this).text()
+                    sedes.push(tituloSede)
+                })
+                $('.col-xs-12.text-left.col-sm-6.col-md-6.col-lg-3.mb-sm-3.mb-3.text-bold').find('.text-regular.text-white.small').each(function (i, elem) {
+                    var address = $(this).text().replace('\n','*')
+                    addresses.push(address)
+                })
+                /* console.log(`Sedes: ${sedes.join('\n')}`);
+                console.log(`Direcciones: ${addresses.join('\n')}`); */
+                for (let i = 0; i < sedes.length; i++) {
+                    orderedInfo.push(sedes[i])
+                    orderedInfo.push(addresses[i])
+                }
+                agent.add(orderedInfo);
+                return console.log(orderedInfo);
+            }).catch(err => {
+                // agent.add(`${err}`)
+                return console.log(err)
+            })
+    }
+
     // Intent Eventos
     async function mostrarEventos(agent) {
         const cheerio = require('cheerio');
@@ -65,24 +102,17 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     var event = $(this).text()
                     eventsTitles.push(event)
                 })
+
+                // Unir todo en un solo response para poder mostrarlo en orden. Telegram/Whatsapp lo imprime en desorden. Google Assistant no.
                 const Rarrow = emoji.get(':arrow_right:');
-                
                 agent.add(`Este mes tenemos estos eventos disponibles:\n${Rarrow} ${eventsTitles.join(`\n${Rarrow} `)}\nPara obtener más información, haz clic en este enlace https://www.utb.edu.co/eventos`)
-
-                /* for (let index = 0; index < eventsTitles.length; index++) {
-                    const element = eventsTitles[index];
-                    agent.add(`${index}. ${element}`) 
-                } */
-
-                // agent.add(`Para obtener más información, haz clic en este enlace https://www.utb.edu.co/eventos`)
-                // return console.log(`Mostrar eventos disponibles de este mes.`);
                 return console.log(`Mostrar eventos disponibles de este mes.`);
 
             }).catch(err => {
                 agent.add(`${err}`)
                 return console.log(err)
             })
-            
+
     }
 
 
@@ -98,6 +128,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     let intentMap = new Map();
     intentMap.set('Eventos', mostrarEventos);
+    intentMap.set('Contacto', mostrarContacto);
     // intentMap.set('Horario semillero', mostrarSemilleros);
     agent.handleRequest(intentMap);
 });
