@@ -1,9 +1,4 @@
-'use strict';
 
-var texto = "\'hola\'"
-if(texto[0]==="\'"){
-    console.log('si');
-}
 
 /* const cheerio = require('cheerio');
 const rp = require('request-promise');

@@ -67,16 +67,48 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     sedes.push(tituloSede)
                 })
                 $('.col-xs-12.text-left.col-sm-6.col-md-6.col-lg-3.mb-sm-3.mb-3.text-bold').find('.text-regular.text-white.small').each(function (i, elem) {
-                    var address = $(this).text().replace('\n','*')
+                    var address = $(this).text().replace('\n', '*')
                     addresses.push(address)
                 })
-                /* console.log(`Sedes: ${sedes.join('\n')}`);
-                console.log(`Direcciones: ${addresses.join('\n')}`); */
+                
                 for (let i = 0; i < sedes.length; i++) {
                     orderedInfo.push(sedes[i])
                     orderedInfo.push(addresses[i])
                 }
-                agent.add(orderedInfo);
+                var contactoSedes = []
+                orderedInfo.forEach(p => {
+                    var textoLimpio = []
+                    for (var i = 1; i < p.length; i++) {
+                        // Si atrás y aquí hay letra añadir la letra anterior al string
+                        if (p[i - 1] !== ' ' && p[i] !== ' ') {
+                            textoLimpio += p[i - 1]
+                            if (i === p.length - 1) {
+                                textoLimpio += p[i]
+                            }
+                            continue
+                        }
+                        // Si atrás hay letra y aquí hay espacio concatenar la letra
+                        if (p[i - 1] !== ' ' && p[i] === ' ') {
+                            textoLimpio += p[i - 1]
+                            continue
+                        }
+
+                        //Si atrás hay espacio y aquí hay espacio, terminar la iteración y no hacer nada
+                        if (p[i - 1] === ' ' && p[i] === ' ') {
+                            continue
+                        }
+
+                        //Si atrás hay espacio y aquí hay letra, concatenar espacio 
+                        if (p[i - 1] === ' ' && p[i] !== ' ') {
+                            textoLimpio += p[i - 1]
+                            continue
+                        }
+                    }
+                    contactoSedes.push(textoLimpio.replace('\n\n', ' '));
+                })
+                const soon = emoji.get(':soon:');
+                const smile = emoji.get(':grin:');
+                agent.add(`Estas son las direcciones y telefonos de los diferentes campus de la Universidad Tecnológica de Bolivar.\n\n ${contactoSedes.join(`\n`)}\n\n ${soon} Próximamente podrás consultar extensiones telefónicas...${smile}`)
                 return console.log(orderedInfo);
             }).catch(err => {
                 // agent.add(`${err}`)
@@ -127,9 +159,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     } */
 
     let intentMap = new Map();
-    intentMap.set('Eventos', mostrarEventos);
     intentMap.set('Contacto', mostrarContacto);
-    // intentMap.set('Horario semillero', mostrarSemilleros);
+    intentMap.set('Eventos', mostrarEventos);
     agent.handleRequest(intentMap);
 });
 // Para efectuar los cambios en DialogFlow usar el siguiente comando

@@ -1,4 +1,4 @@
-const cheerio = require('cheerio');
+/* const cheerio = require('cheerio');
 const rp = require('request-promise');
 const options = {
     uri: 'https://www.utb.edu.co',
@@ -31,7 +31,7 @@ rp(options)
         // agent.add(`${err}`)
         console.log(err)
     })
-
+ */
 /* const cheerio = require('cheerio');
 const rp = require('request-promise');
 const options = {
