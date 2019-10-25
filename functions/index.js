@@ -4,7 +4,11 @@ const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const { Card, Suggestion } = require('dialogflow-fulfillment');
 const admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
+let serviceAccount = require('./key.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
 let db = admin.firestore();
 
 
@@ -56,7 +60,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     var address = $(this).text().replace('\n', '*')
                     addresses.push(address)
                 })
-                
+
                 for (let i = 0; i < sedes.length; i++) {
                     orderedInfo.push(sedes[i])
                     orderedInfo.push(addresses[i])
@@ -134,14 +138,32 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     //Intent Testing con Entity Frutas
-    function calificarFruta(agent){
-        var fruta = agent.parameters['fruta']
+    async function getExtension(agent) {
         const Rarrow = emoji.get(':arrow_right:');
-        agent.add(`que hp asco la ${fruta} 🤮`)
+        var dependencia = agent.parameters['dependencias']
+
+        var query = await db.collection(`${dependencia}`).get()
+            .then((d) => {
+                var datos = []
+                d.forEach((empleado) => {
+                    datos.push(empleado.data())
+                    // agent.add('Holamundo')
+                })
+                var orderedInfo = []
+                datos.forEach(empleado => {
+                    orderedInfo.push(`${empleado['NOMBRE']}\nCargo: ${empleado['CARGO']}\nDependencia: ${empleado['DEPENDENCIA']}\nExtensión: ${empleado['EXTENSIÓN']}`)
+                })
+                agent.add(`En ${dependencia.toLowerCase()} te puedes contactar con:\n😁 ${orderedInfo.join('\n\n😁 ')}`)
+                return console.log('Mostrando extensiones');
+            })
+            .catch((err) => {
+                return console.log('Error getting documents', err);
+            });
+
     }
 
     let intentMap = new Map();
-    intentMap.set('Testing', calificarFruta);
+    intentMap.set('getExtension', getExtension);
     intentMap.set('Contacto', mostrarContacto);
     intentMap.set('Eventos', mostrarEventos);
     agent.handleRequest(intentMap);
