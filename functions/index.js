@@ -25,6 +25,86 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     const msgListHorarios = [`Te puedo mostrar los horarios de semilleros, monitorías
  	y los horarios de atención de los profesores. ¿Con cuál te gustaría comenzar?`,
         `Tengo horario de semilleros, monitorías y el de profesores, ¿Cual te interesa conocer?`];
+
+    var dependencias = ["RECTORÍA",
+        "SECRETARÍA GENERAL",
+        "ADMISIONES Y REGISTRO",
+        "DIRECCIÓN DE PLANEACIÓN Y GESTIÓN DE LA CALIDAD",
+        "DIRECCIÓN DE MERCADEO Y COMUNICACIONES",
+        "JEFE DE VENTAS",
+        "JEFE DE COMUNICACIONES",
+        "JEFE DE PRENSA",
+        "JEFE DE CONTACT CENTER",
+        "DIRECCIÓN DE INTERNACIONALIZACIÓN",
+        "VICERRECTORÍA ACADÉMICA",
+        "FACULTAD DE INGENIERÍA",
+        "PROGRAMA DE INGENIERÍA INDUSTRIAL",
+        "PROGRAMA DE INGENIERÍA DE SISTEMAS",
+        "PROGRAMAS DE INGENIERÍA MECÁNICA E INGENIERÍA MECATRÓNICA",
+        "PROGRAMAS DE INGENIERÍA ELÉCTRICA E INGENIERÍA ELECTRÓNICA",
+        "PROGRAMAS DE INGENIERÍA CIVIL E INGENIERÍA AMBIENTAL",
+        "PROGRAMA DE INGENIERÍA QUÍMICA",
+        "PROGRAMA DE INGENIERÍA NAVAL",
+        "PROGRAMAS DE POSGRADOS DE LA FACULTAD DE INGENIERÍA",
+        "PROFESIONALES DE POSGRADO DE LA FACULTAD DE INGENIERÍA",
+        "PROGRAMA DE FINANZAS Y NEGOCIOS INTERNACIONALES",
+        "PROGRAMA DE ADMINISTRACIÓN DE EMPRESAS",
+        "PROGRAMA DE CONTADURÍA PÚBLICA",
+        "PROGRAMA DE ECONOMÍA",
+        "PROGRAMAS DE POSGRADOS DE LA FACULTAD DE ECONOMÍA Y NEGOCIOS",
+        "FACULTAD DE CIENCIAS SOCIALES Y HUMANIDADES",
+        "COORDINACIÓN DE HUMANIDADES",
+        "CENTRO DE IDÍOMAS",
+        "PROGRAMA DE PSICOLOGÍA",
+        "PROGRAMA DE COMUNICACIÓN SOCIAL",
+        "PROGRAMA DE CIENCIA POLÍTICA Y RELACIONES INTERNACIONALES",
+        "PROGRAMA DE DERECHO",
+        "CONSULTORIO JURÍDICO",
+        "FACULTAD CIENCIAS BÁSICAS",
+        "PROGRAMAS DE POSGRADOS DE LA FACULTAD DE CIENCIAS BÁSICAS",
+        "FACULTAD DE EDUCACIÓN",
+        "PROGRAMAS DE POSGRADOS DE EDUCACIÓN",
+        "ESCUELA DE ESTUDIOS TÉCNICOS Y TECNOLÓGICOS",
+        "EQUIPO UTB- COTA (CONVENIO UTB-EDUPOL)",
+        "DIRECCIÓN DE INVESTIGACIÓN,INNOVACIÓN Y EMPRENDIMIENTO",
+        "LABORATORIO DE CREATIVIDAD E INNOVACIÓN",
+        "DIRECCIÓN DE EXCELENCIA DOCENTE Y APOYO AL APRENDIZAJE",
+        "ASUNTOS PROFESIONALES",
+        "APRENDIENDO A APRENDER",
+        "ACOMPAÑAMIENTO ACADÉMICO",
+        "MONITOREO ACADÉMICO E INVESTIGACIÓN",
+        "TECNOLOGÍA APLICADA A LA EDUCACIÓN",
+        "DIRECCIÓN DE BIENESTAR UNIVERSITARIO",
+        "DESARROLLO PSICOSOCIAL",
+        "OBSERVATORIO VIDA UNIVERSITARIA",
+        "TALENTO Y ESPÍRITU UNIVERSITARIO",
+        "DIRECCIÓN DE BIBLIOTECAS Y ARCHIVO",
+        "ARCHIVOS Y CORRESPONDENCIA",
+        "DIRECCIÓN FINANCIERA",
+        "TESORERÍA",
+        "CONTABILIDAD",
+        "OFICINA DE APOYO FINANCIERO",
+        "CONTROL PRESUPUESTAL Y FINANCIERO",
+        "DIRECCIÓN DE SERVICIOS ADMINISTRATIVOS",
+        "DEPARTAMENTO DE MANTENIMIENTO Y SERVICIOS GENERALES",
+        "DEPARTAMENTO DE AUDIOVISUALES Y MULTIMEDIA",
+        "DEPARTAMENTO DE UNIDADES DE SERVICIOS",
+        "CAFETERÍA",
+        "LIBRERÍA Y TIENDA UNIVERSITARIA",
+        "DIRECCIÓN DE TECNOLOGÍAS DE INFORMACIÓN Y COMUNICACIÓN - TIC",
+        "DEPARTAMENTO DE INFRAESTRUCTURA Y REDES",
+        "DEPARTAMENTO DE SISTEMA DE INFORMACIÓN",
+        "DEPARTAMENTO DE GESTIÓN DE SERVICIOS DE TECNOLOGÍAS E INFORMACIÓN",
+        "DIRECCIÓN DE INFRAESTRUCTURA Y MEDIO AMBIENTE",
+        "DIRECCIÓN DE GESTIÓN HUMANA",
+        "DEPARTAMENTO DE COMPRAS Y CONTRATACIÓN",
+        "DIRECCIÓN DE EXTENSIÓN",
+        "DEPARTAMENTO DE ASESORÍAS,CONSULTORÍAS Y SERVICIOS TÉCNICOS - CAST",
+        "DEPARTAMENTO DE PRÁCTICAS PROFESIONALES",
+        "DEPARTAMENTO DE EGRESADOS",
+        "FONDO UTB"]
+
+
     // --- FIN --- //
 
     const agent = new WebhookClient({ request, response });
@@ -137,33 +217,57 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     }
 
-    //Intent Testing con Entity Frutas
-    async function getExtension(agent) {
-        const Rarrow = emoji.get(':arrow_right:');
+    //Obenter datos de empleados por dependencia
+    async function getExtensionbyDependencia(agent) {
         var dependencia = agent.parameters['dependencias']
-
-        var query = await db.collection(`${dependencia}`).get()
-            .then((d) => {
-                var datos = []
-                d.forEach((empleado) => {
-                    datos.push(empleado.data())
-                    // agent.add('Holamundo')
-                })
-                var orderedInfo = []
-                datos.forEach(empleado => {
-                    orderedInfo.push(`${empleado['NOMBRE']}\nCargo: ${empleado['CARGO']}\nDependencia: ${empleado['DEPENDENCIA']}\nExtensión: ${empleado['EXTENSIÓN']}`)
-                })
-                agent.add(`En ${dependencia.toLowerCase()} te puedes contactar con:\n😁 ${orderedInfo.join('\n\n😁 ')}`)
-                return console.log('Mostrando extensiones');
+        let citiesRef = db.collection('UTB');
+        let query = await citiesRef.where('DEPENDENCIA', '==', `${dependencia}`).get()
+            .then(snapshot => {
+                if (snapshot.empty) {
+                    return console.log('No matching documents.');
+                }
+                var response = []
+                snapshot.forEach(doc => {
+                    response.push(`😀${doc.data()['NOMBRE']}\n☎️Extensión: ${doc.data()['EXTENSIÓN']}\n🤓Cargo: ${doc.data()['CARGO'].toLowerCase()}\n📧Correo: ${doc.data()['CORREO']}`)
+                });
+                agent.add(` `)
+                agent.add(`En ${dependencia.toLowerCase()} te puedes contactar con:\n\n${response.join('\n\n')}`)
+                return console.log('Success');
             })
-            .catch((err) => {
+            .catch(err => {
+                agent.add('Lo siento, no he encontrado esa dependencia. Verifíca que la hayas escrito bien.')
+                return console.log('Error getting documents', err);
+            });
+    }
+    // Obtener datos de contacto de un empleado
+    async function getExtensionbyEmpleado(agent) {
+        var nombre = agent.parameters['empleados']
+        let citiesRef = db.collection('UTB');
+        let query = await citiesRef.where('NOMBRE', '==', `${nombre}`).get()
+            .then(snapshot => {
+                if (snapshot.empty) {
+                    return console.log('No matching documents.');
+                }
+                var response = []
+                snapshot.forEach(doc => {
+                    response.push(`😀${doc.data()['NOMBRE']}\n☎️Extensión: ${doc.data()['EXTENSIÓN']}\n 💼Dependencia: ${doc.data()['DEPENDENCIA'].toLowerCase()}\n🤓Cargo: ${doc.data()['CARGO'].toLowerCase()}\n📧Correo: ${doc.data()['CORREO']}`)
+                });
+                agent.add(`Esta es la información que tengo de ${nombre.toLowerCase()}:\n\n${response.join('\n\n')}`)
+                return console.log('Success');
+            })
+            .catch(err => {
+                agent.add('Lo siento, no he encontrado a nadie con ese nombre. Prueba colocando el primer nombre y primer apellido o el nombre completo.')
                 return console.log('Error getting documents', err);
             });
 
     }
 
+
+
+
     let intentMap = new Map();
-    intentMap.set('getExtension', getExtension);
+    intentMap.set('getExtensionbyEmpleado', getExtensionbyEmpleado);
+    intentMap.set('getExtensionbyDependencia', getExtensionbyDependencia);
     intentMap.set('Contacto', mostrarContacto);
     intentMap.set('Eventos', mostrarEventos);
     agent.handleRequest(intentMap);
